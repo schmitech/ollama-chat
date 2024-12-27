@@ -115,7 +115,7 @@ npm run dev
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the Apache 2 License - see the LICENSE file for details.
 
 ## Troubleshooting
 
@@ -141,3 +141,5 @@ If you encounter any issues:
 2. Verify your configuration in .env
 3. Ensure Ollama is running and responsive
 4. Open an issue in the repository with detailed error information
+
+Copyright 2024 Schmitech Inc.
