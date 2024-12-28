@@ -73,30 +73,6 @@ OLLAMA_MODEL=your-model OLLAMA_ENDPOINT=http://your-server:11434 npm start
 2. Open your web browser and navigate to `http://localhost:3000`
 3. Start chatting with your chosen Ollama model!
 
-## Features
-
-- Real-time chat interface
-- Support for multiple Ollama models
-- Configurable Ollama endpoint
-- Clear chat history functionality
-- Responsive design
-- Error handling and logging
-
-## Project Structure
-
-```
-ollama-chat/
-├── src/
-│   ├── index.ts          # Main application entry
-│   ├── ollama-api.ts     # Ollama API integration
-│   └── public/
-│       └── index.html    # Web interface
-├── .env                  # Environment configuration
-├── .gitignore           # Git ignore rules
-├── package.json         # Project dependencies and scripts
-└── tsconfig.json        # TypeScript configuration
-```
-
 ## Development
 
 To run the application in development mode with auto-reload:
