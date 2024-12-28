@@ -54,3 +54,6 @@ coverage/
 .env
 .env.test
 .env.production
+
+# Conversation storage
+conversations/
