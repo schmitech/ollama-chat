@@ -8,6 +8,7 @@
     "build": "tsc",
     "dev": "nodemon src/index.ts",
     "start:mistral": "OLLAMA_MODEL=mistral ts-node src/index.ts",
+    "start:tinyllama": "OLLAMA_MODEL=tinyllama ts-node src/index.ts",
     "start:llama2": "OLLAMA_MODEL=llama2 ts-node src/index.ts",
     "start:codellama": "OLLAMA_MODEL=codellama ts-node src/index.ts",
     "start:custom": "ts-node src/index.ts"
