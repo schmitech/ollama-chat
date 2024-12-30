@@ -20,7 +20,7 @@ export class OllamaAPI {
   private cache: NodeCache;
 
 constructor() {
-  this.baseURL = process.env.OLLAMA_ENDPOINT || 'http://localhost:11434';
+  this.baseURL = process.env.OLLAMA_ENDPOINT || 'http://127.0.0.1:11434';
   this.model = process.env.OLLAMA_MODEL || 'mistral';
   this.store = new ConversationStore();
   this.cache = new NodeCache({ stdTTL: 3600 }); // 1 hour cache
