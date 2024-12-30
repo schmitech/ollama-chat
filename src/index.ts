@@ -3,11 +3,21 @@ import express from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import path from 'path';
+import rateLimit from 'express-rate-limit';
 import { OllamaAPI } from './ollama-api';
 
 const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer);
+
+// Rate limiting setup
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100 // limit each IP to 100 requests per windowMs
+});
+
+// Apply rate limiting to API routes
+app.use('/api/', limiter);
 
 // Map to store API instances for each socket connection
 const apiInstances = new Map<string, OllamaAPI>();
