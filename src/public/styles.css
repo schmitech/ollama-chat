@@ -1,233 +1,242 @@
-        body {
+body {
+    margin: 0;
+    padding: 20px;
+    font-family: system-ui, -apple-system, sans-serif;
+    line-height: 1.5;
+    background-color: #f8f9fa;
+}
 
-            margin: 0;
-            padding: 20px;
-            font-family: system-ui, -apple-system, sans-serif;
-            line-height: 1.5;
-            background-color: #f8f9fa;
-        }
+#chat-container {
+    max-width: 900px;
+    margin: 0 auto;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+}
 
-        #chat-container {
-            max-width: 900px;
-            margin: 0 auto;
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            padding: 20px;
-        }
+#messages {
+    height: 600px;
+    padding: 10px;
+    margin-bottom: 20px;
+    overflow-y: auto;
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+}
 
-        #messages {
-            height: 600px;
-            padding: 10px;
-            margin-bottom: 20px;
-            overflow-y: auto;
-            border: 1px solid #e9ecef;
-            border-radius: 6px;
-        }
+/* Input and controls */
+#input-container {
+    display: flex;
+    gap: 10px;
+}
 
-        #message-input {
-            word-wrap: break-word;
-        }
+#message-input {
+    flex-grow: 1;
+    padding: 12px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    font-size: 16px;
+    word-wrap: break-word;
+}
 
-        /* Loading spinner styles */
-        .loading-spinner {
-            display: none;
-            margin: 10px 0;
-            padding: 12px;
-            border-radius: 6px;
-            background-color: #f8f9fa;
-            border: 1px solid #e9ecef;
-        }
+#message-input:disabled {
+    background-color: #e9ecef;
+    cursor: not-allowed;
+}
 
-        .spinner {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #007bff;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-right: 10px;
-            vertical-align: middle;
-        }
+/* Button styles */
+button, .file-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 16px;
+    min-width: 120px;
+    height: 40px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s ease;
+    gap: 6px;
+}
 
-        @keyframes spin {
-            0% {
-                transform: rotate(0deg);
-            }
+button:hover, .file-label:hover {
+    background-color: #0056b3;
+    transform: translateY(-1px);
+}
 
-            100% {
-                transform: rotate(360deg);
-            }
-        }
+button:disabled {
+    background-color: #6c757d;
+    cursor: not-allowed;
+    transform: none;
+}
 
-        #input-container {
-            display: flex;
-            gap: 10px;
-        }
+/* Specific button variations */
+.file-label {
+    background-color: #6c757d;
+}
 
-        #message-input {
-            flex-grow: 1;
-            padding: 12px;
-            border: 1px solid #ced4da;
-            border-radius: 4px;
-            font-size: 16px;
-        }
+.file-label:hover {
+    background-color: #5a6268;
+}
 
-        #message-input:disabled {
-            background-color: #e9ecef;
-            cursor: not-allowed;
-        }
+#clear-button {
+    background-color: #dc3545;
+}
 
-        button {
-            padding: 8px 16px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 16px;
-            transition: background-color 0.2s;
-        }
+#clear-button:hover {
+    background-color: #c82333;
+}
 
-        button:hover {
-            background-color: #0056b3;
-        }
+/* File upload related styles */
+.upload-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
 
-        button:disabled {
-            background-color: #6c757d;
-            cursor: not-allowed;
-        }
+.file-input {
+    width: 0.1px;
+    height: 0.1px;
+    opacity: 0;
+    overflow: hidden;
+    position: absolute;
+    z-index: -1;
+}
 
-        .message {
-            margin-bottom: 20px;
-            padding: 12px;
-            border-radius: 6px;
-            max-width: 100%;
-        }
+.file-label svg {
+    width: 16px;
+    height: 16px;
+}
 
-        .user-message {
-            background-color: #e9ecef;
-            margin-left: auto;
-            margin-right: 0;
-        }
+.file-name {
+    font-size: 14px;
+    color: #6c757d;
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
 
-        .bot-message {
-            background-color: #f8f9fa;
-            border: 1px solid #e9ecef;
-        }
+/* Message styles */
+.message {
+    margin-bottom: 20px;
+    padding: 12px;
+    border-radius: 6px;
+    max-width: 100%;
+}
 
-        .message pre {
-            margin: 10px 0;
-            padding: 12px;
-            background-color: #f8f9fa;
-            border-radius: 4px;
-            overflow-x: auto;
-        }
+.message-container {
+    position: relative;
+}
 
-        .message code {
-            font-family: 'Fira Code', monospace;
-            font-size: 14px;
-        }
+.user-message {
+    background-color: #e9ecef;
+    margin-left: auto;
+    margin-right: 0;
+}
 
-        .message p {
-            margin: 0 0 10px 0;
-        }
+.bot-message {
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+}
 
-        .code-block {
-            position: relative;
-            margin: 1em 0;
-        }
+.message pre {
+    margin: 10px 0;
+    padding: 12px;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+    overflow-x: auto;
+}
 
-        .code-block pre {
-            margin: 0;
-            border-radius: 6px;
-        }
+.message code {
+    font-family: 'Fira Code', monospace;
+    font-size: 14px;
+}
 
-        .language-marker {
-            position: absolute;
-            top: 0;
-            right: 0;
-            padding: 2px 6px;
-            background: #e9ecef;
-            color: #495057;
-            border-radius: 0 6px 0 6px;
-            font-size: 12px;
-        }
+.message p {
+    margin: 0 0 10px 0;
+}
 
-        .upload-container {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .file-input {
-            width: 0.1px;
-            height: 0.1px;
-            opacity: 0;
-            overflow: hidden;
-            position: absolute;
-            z-index: -1;
-        }
-        
-        .file-label {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            padding: 8px 16px;
-            background-color: #6c757d;
-            color: white;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: background-color 0.2s;
-        }
-        
-        .file-label:hover {
-            background-color: #5a6268;
-        }
-        
-        .file-label svg {
-            width: 16px;
-            height: 16px;
-        }
-        
-        .file-name {
-            font-size: 14px;
-            color: #6c757d;
-            max-width: 150px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
+/* Code block styles */
+.code-block {
+    position: relative;
+    margin: 1em 0;
+}
 
-        .message-container {
-            position: relative;
-        }
-        
-        .copy-button {
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            padding: 4px 8px;
-            background: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 4px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            font-size: 12px;
-            color: #6c757d;
-            transition: all 0.2s;
-        }
-        
-        .copy-button:hover {
-            background: #e9ecef;
-            color: #495057;
-        }
-        
-        .copy-button svg {
-            width: 14px;
-            height: 14px;
-        }
+.code-block pre {
+    margin: 0;
+    border-radius: 6px;
+}
+
+.language-marker {
+    position: absolute;
+    top: 0;
+    right: 0;
+    padding: 2px 6px;
+    background: #e9ecef;
+    color: #495057;
+    border-radius: 0 6px 0 6px;
+    font-size: 12px;
+}
+
+/* Copy button styles */
+.copy-button {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    padding: 4px 8px;
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: #6c757d;
+    transition: all 0.2s;
+}
+
+.copy-button:hover {
+    background: #e9ecef;
+    color: #495057;
+}
+
+.copy-button svg {
+    width: 14px;
+    height: 14px;
+}
+
+/* Loading spinner styles */
+.loading-spinner {
+    display: none;
+    margin: 10px 0;
+    padding: 12px;
+    border-radius: 6px;
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+}
+
+.spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #007bff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-right: 10px;
+    vertical-align: middle;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}

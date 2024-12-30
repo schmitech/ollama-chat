@@ -1,4 +1,3 @@
-// src/ollama-api.ts
 import axios from 'axios';
 import dotenv from 'dotenv';
 import NodeCache from 'node-cache';
@@ -20,12 +19,11 @@ export class OllamaAPI {
   private cache: NodeCache;
 
 constructor() {
-  this.baseURL = process.env.OLLAMA_ENDPOINT || 'http://127.0.0.1:11434';
+  this.baseURL = process.env.OLLAMA_ENDPOINT || (process.platform === 'win32' ? 'http://127.0.0.1:11434' : 'http://localhost:11434');
   this.model = process.env.OLLAMA_MODEL || 'mistral';
   this.store = new ConversationStore();
-  this.cache = new NodeCache({ stdTTL: 3600 }); // 1 hour cache
+  this.cache = new NodeCache({ stdTTL: 3600 });
   
-  // Create reusable axios instance with longer timeout
   this.axiosInstance = axios.create({
     baseURL: this.baseURL,
     timeout: 120000,
@@ -84,8 +82,6 @@ constructor() {
         return cachedResponse;
       }
 
-      console.log(`Using model: ${this.model}`);
-      
       const response = await this.axiosInstance.post<OllamaChatResponse>('/api/generate', {
         model: this.model,
         prompt: recentMessages,

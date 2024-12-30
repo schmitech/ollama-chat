@@ -8,7 +8,14 @@ import { OllamaAPI } from './ollama-api';
 
 const app = express();
 const httpServer = createServer(app);
-const io = new Server(httpServer);
+
+const io = new Server(httpServer, {
+  transports: ['websocket'],  // Only use WebSocket transport
+  pingTimeout: 60000,
+  pingInterval: 25000
+});
+
+const sharedApi = new OllamaAPI();
 
 // Rate limiting setup
 const limiter = rateLimit({
@@ -26,11 +33,10 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 io.on('connection', (socket) => {
   console.log('Client connected');
-  const api = new OllamaAPI();
-  apiInstances.set(socket.id, api);
+  apiInstances.set(socket.id, sharedApi);
 
   // Initialize a new conversation
-  api.initConversation().then(conversationId => {
+  sharedApi.initConversation().then(conversationId => {
     socket.emit('conversation_started', { id: conversationId });
   });
 
