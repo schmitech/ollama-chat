@@ -5,6 +5,7 @@ import { Server } from 'socket.io';
 import path from 'path';
 import rateLimit from 'express-rate-limit';
 import { OllamaAPI } from './ollama-api';
+import { ConversationStore } from './conversation-store';
 
 const app = express();
 const httpServer = createServer(app);
@@ -30,6 +31,29 @@ app.use('/api/', limiter);
 const apiInstances = new Map<string, OllamaAPI>();
 
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Add shutdown handling
+async function shutdown() {
+  console.log('Shutting down gracefully...');
+  
+  // Close all socket connections
+  io.close();
+  
+  // Close the HTTP server
+  httpServer.close();
+
+  // Cleanup database connections
+  const api = apiInstances.values().next().value;
+  if (api) {
+    await api.cleanup();
+  }
+
+  process.exit(0);
+}
+
+// Handle shutdown signals
+process.on('SIGTERM', shutdown);
+process.on('SIGINT', shutdown);
 
 io.on('connection', (socket) => {
   console.log('Client connected');

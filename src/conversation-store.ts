@@ -1,6 +1,5 @@
-import fs from 'fs';
-import fsPromises from 'fs/promises';
-import path from 'path';
+import sqlite3 from 'sqlite3';
+import { Database, open } from 'sqlite';
 import crypto from 'crypto';
 
 export interface Message {
@@ -17,117 +16,127 @@ export interface Conversation {
 }
 
 export class ConversationStore {
-  private storageDir: string;
+  private db: Database | null = null;
 
   constructor() {
-    this.storageDir = path.join(process.cwd(), 'conversations');
-    // Synchronously create directory if it doesn't exist
-    if (!fs.existsSync(this.storageDir)) {
-      fs.mkdirSync(this.storageDir, { recursive: true });
-    }
+    this.initializeDb();
   }
 
-  private getConversationPath(id: string): string {
-    return path.join(this.storageDir, `${id}.json`);
+  private async initializeDb() {
+    this.db = await open({
+      filename: 'conversations.db',
+      driver: sqlite3.Database
+    });
+
+    // Create tables if they don't exist
+    await this.db.exec(`
+      CREATE TABLE IF NOT EXISTS conversations (
+        id TEXT PRIMARY KEY,
+        model TEXT NOT NULL,
+        lastUpdated INTEGER NOT NULL
+      );
+      
+      CREATE TABLE IF NOT EXISTS messages (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        conversationId TEXT NOT NULL,
+        role TEXT NOT NULL,
+        content TEXT NOT NULL,
+        timestamp INTEGER NOT NULL,
+        FOREIGN KEY (conversationId) REFERENCES conversations(id)
+      );
+    `);
   }
 
   async createConversation(model: string): Promise<string> {
+    if (!this.db) throw new Error('Database not initialized');
+    
     const id = crypto.randomBytes(16).toString('hex');
-    const conversation: Conversation = {
-      id,
-      messages: [],
-      model,
-      lastUpdated: Date.now()
-    };
-
-    // Ensure directory exists again just to be safe
-    if (!fs.existsSync(this.storageDir)) {
-      fs.mkdirSync(this.storageDir, { recursive: true });
-    }
-
-    await fsPromises.writeFile(
-      this.getConversationPath(id),
-      JSON.stringify(conversation, null, 2)
+    await this.db.run(
+      'INSERT INTO conversations (id, model, lastUpdated) VALUES (?, ?, ?)',
+      [id, model, Date.now()]
     );
-
+    
     return id;
   }
 
   async getConversation(id: string): Promise<Conversation | null> {
-    try {
-      const data = await fsPromises.readFile(this.getConversationPath(id), 'utf-8');
-      return JSON.parse(data);
-    } catch (error) {
-      console.error('Error reading conversation:', error);
-      return null;
-    }
+    if (!this.db) throw new Error('Database not initialized');
+
+    const conversation = await this.db.get(
+      'SELECT * FROM conversations WHERE id = ?',
+      [id]
+    );
+    if (!conversation) return null;
+
+    const messages = await this.db.all(
+      'SELECT role, content, timestamp FROM messages WHERE conversationId = ? ORDER BY timestamp',
+      [id]
+    );
+
+    return {
+      id: conversation.id,
+      model: conversation.model,
+      lastUpdated: conversation.lastUpdated,
+      messages
+    };
   }
 
   async addMessage(id: string, message: Omit<Message, 'timestamp'>): Promise<void> {
-    const conversation = await this.getConversation(id);
-    if (!conversation) throw new Error('Conversation not found');
+    if (!this.db) throw new Error('Database not initialized');
 
-    conversation.messages.push({
-      ...message,
-      timestamp: Date.now()
-    });
-    conversation.lastUpdated = Date.now();
-
-    await fsPromises.writeFile(
-      this.getConversationPath(id),
-      JSON.stringify(conversation, null, 2)
+    const timestamp = Date.now();
+    await this.db.run(
+      'INSERT INTO messages (conversationId, role, content, timestamp) VALUES (?, ?, ?, ?)',
+      [id, message.role, message.content, timestamp]
+    );
+    
+    await this.db.run(
+      'UPDATE conversations SET lastUpdated = ? WHERE id = ?',
+      [timestamp, id]
     );
   }
 
   async clearConversation(id: string): Promise<void> {
-    const conversation = await this.getConversation(id);
-    if (!conversation) throw new Error('Conversation not found');
+    if (!this.db) throw new Error('Database not initialized');
 
-    conversation.messages = [];
-    conversation.lastUpdated = Date.now();
-
-    await fsPromises.writeFile(
-      this.getConversationPath(id),
-      JSON.stringify(conversation, null, 2)
+    await this.db.run('DELETE FROM messages WHERE conversationId = ?', [id]);
+    await this.db.run(
+      'UPDATE conversations SET lastUpdated = ? WHERE id = ?',
+      [Date.now(), id]
     );
   }
 
   async deleteConversation(id: string): Promise<void> {
-    try {
-      await fsPromises.unlink(this.getConversationPath(id));
-    } catch {
-      // Ignore if file doesn't exist
-    }
+    if (!this.db) throw new Error('Database not initialized');
+
+    await this.db.run('DELETE FROM messages WHERE conversationId = ?', [id]);
+    await this.db.run('DELETE FROM conversations WHERE id = ?', [id]);
   }
 
   async listConversations(): Promise<Array<{ id: string; lastUpdated: number }>> {
-    // Ensure directory exists
-    if (!fs.existsSync(this.storageDir)) {
-      fs.mkdirSync(this.storageDir, { recursive: true });
-      return [];
-    }
+    if (!this.db) throw new Error('Database not initialized');
 
-    const files = await fsPromises.readdir(this.storageDir);
-    const conversations = await Promise.all(
-      files
-        .filter(file => file.endsWith('.json'))
-        .map(async file => {
-          try {
-            const conversation = await this.getConversation(
-              file.replace('.json', '')
-            );
-            return conversation 
-              ? { id: conversation.id, lastUpdated: conversation.lastUpdated }
-              : null;
-          } catch (error) {
-            console.error('Error reading conversation file:', file, error);
-            return null;
-          }
-        })
+    return this.db.all(
+      'SELECT id, lastUpdated FROM conversations ORDER BY lastUpdated DESC'
     );
+  }
 
-    return conversations
-      .filter((c): c is { id: string; lastUpdated: number } => c !== null)
-      .sort((a, b) => b.lastUpdated - a.lastUpdated);
+  async cleanup(): Promise<void> {
+    if (!this.db) return;
+    
+    // Close the database connection
+    await this.db.close();
+    
+    // Reset the db reference
+    this.db = null;
+  }
+
+  async clearAllData(): Promise<void> {
+    if (!this.db) throw new Error('Database not initialized');
+    
+    await this.db.exec(`
+      DELETE FROM messages;
+      DELETE FROM conversations;
+    `);
   }
 }

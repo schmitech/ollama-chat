@@ -56,4 +56,4 @@ coverage/
 .env.production
 
 # Conversation storage
-conversations/
+conversations.db

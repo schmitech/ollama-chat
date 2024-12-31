@@ -33,7 +33,16 @@ constructor() {
   });
   
   console.log(`Initializing Ollama API with model: ${this.model} at endpoint: ${this.baseURL}`);
+  
+  // Initialize store asynchronously
+  this.initStore().catch(console.error);
 }
+
+  private async initStore() {
+    // Wait for database initialization
+    await new Promise(resolve => setTimeout(resolve, 100));
+    console.log('Database initialized');
+  }
 
   async initConversation(): Promise<string> {
     this.currentConversationId = await this.store.createConversation(this.model);
@@ -137,5 +146,11 @@ constructor() {
 
   getCurrentConversationId(): string | null {
     return this.currentConversationId;
+  }
+
+  async cleanup(): Promise<void> {
+    if (this.store) {
+      await this.store.cleanup();
+    }
   }
 }
