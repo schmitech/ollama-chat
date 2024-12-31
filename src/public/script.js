@@ -100,37 +100,16 @@ function appendMessage(message, isUser = false) {
 
         const copyButton = document.createElement('button');
         copyButton.className = 'copy-button';
-        copyButton.innerHTML = `
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-            </svg>
-            <span>Copy</span>
-        `;
+        copyButton.innerHTML = '<svg class="copy-icon"></svg>';
         
         copyButton.addEventListener('click', () => {
-            if (!message) {
-                return;
-            }
-            // Get text content without the copy button
+            if (!message) return;
+            
             navigator.clipboard.writeText(message).then(() => {
-                copyButton.innerHTML = `
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="20 6 9 17 4 12"></polyline>
-                    </svg>
-                    <span>Copied!</span>
-                `;
-                copyButton.style.color = '#28a745';
+                copyButton.classList.add('copied');
                 
                 setTimeout(() => {
-                    copyButton.innerHTML = `
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                        </svg>
-                        <span>Copy</span>
-                    `;
-                    copyButton.style.color = '';
+                    copyButton.classList.remove('copied');
                 }, 2000);
             });
         });
