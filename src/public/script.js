@@ -59,101 +59,53 @@ function closePreview() {
 }
 
 function formatMessage(content) {
-    // Split content into code blocks and text
-    const parts = content.split(/```(\w+)?\n([\s\S]*?)```/g);
-    let formattedContent = '';
-
-    for (let i = 0; i < parts.length; i++) {
-        if (i % 4 === 0) {
-            // Regular text
-            formattedContent += parts[i]
-                .split('\n')
-                .map(line => `<p>${line}</p>`)
-                .join('');
-        } else if (i % 4 === 1) {
-            // Language identifier
-            const language = parts[i] || 'plaintext';
-            const code = parts[i + 1];
-            formattedContent += `
-                        <div class="code-block">
-                            <span class="language-marker">${language}</span>
-                            <pre><code class="language-${language}">${code}</code></pre>
-                        </div>
-                    `;
-            i += 2; // Skip the next two parts (code content and closing delimiter)
-        }
+    // Add strict content validation
+    if (!content || typeof content !== 'string') {
+        console.warn('Received invalid content in formatMessage:', content);
+        return '<p>Empty message</p>';
     }
 
-    return formattedContent;
-}
+    try {
+        // Split content into code blocks and text
+        const parts = content.split(/```(\w+)?\n([\s\S]*?)```/g);
+        let formattedContent = '';
 
-function appendMessage(message, isUser = false) {
-    const messageContainer = document.createElement('div');
-    messageContainer.className = 'message-container';
-
-    const messageDiv = document.createElement('div');
-    messageDiv.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
-    messageDiv.innerHTML = formatMessage(message);
-
-    // Create copy button
-    const copyButton = document.createElement('button');
-    copyButton.className = 'copy-button';
-    copyButton.innerHTML = `
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-        </svg>
-        <span>Copy</span>
-    `;
-    
-    copyButton.addEventListener('click', () => {
-        // Get text content without the copy button
-        const textToCopy = message;
-        navigator.clipboard.writeText(textToCopy).then(() => {
-            // Change button text temporarily
-            copyButton.innerHTML = `
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
-                <span>Copied!</span>
-            `;
-            copyButton.style.color = '#28a745';
-            
-            // Reset button after 2 seconds
-            setTimeout(() => {
-                copyButton.innerHTML = `
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                    </svg>
-                    <span>Copy</span>
+        for (let i = 0; i < parts.length; i++) {
+            if (i % 4 === 0) {
+                // Regular text - ensure part exists before splitting
+                const part = parts[i] || '';
+                formattedContent += part
+                    .split('\n')
+                    .map(line => `<p>${line}</p>`)
+                    .join('');
+            } else if (i % 4 === 1) {
+                // Language identifier
+                const language = parts[i] || 'plaintext';
+                const code = parts[i + 1] || '';
+                formattedContent += `
+                    <div class="code-block">
+                        <span class="language-marker">${language}</span>
+                        <pre><code class="language-${language}">${code}</code></pre>
+                    </div>
                 `;
-                copyButton.style.color = '';
-            }, 2000);
-        });
-    });
+                i += 2; // Skip the next two parts (code content and closing delimiter)
+            }
+        }
 
-    messageContainer.appendChild(messageDiv);
-    messageContainer.appendChild(copyButton);
-
-    // Insert before the loading spinner if it's visible
-    if (loadingSpinner.style.display === 'block') {
-        messagesDiv.insertBefore(messageContainer, loadingSpinner);
-    } else {
-        messagesDiv.appendChild(messageContainer);
+        return formattedContent;
+    } catch (error) {
+        console.error('Error in formatMessage:', error);
+        return '<p>Error formatting message</p>';
     }
-
-    messagesDiv.scrollTop = messagesDiv.scrollHeight;
-
-    // Highlight all code blocks
-    messageDiv.querySelectorAll('pre code').forEach((block) => {
-        Prism.highlightElement(block);
-    });
 }
 
 function sendMessage() {
     const message = messageInput.value.trim();
-    if (message) {
+    if (!message) {
+        return; // Don't send empty messages
+    }
+
+    try {
         const fullMessage = currentMarkdownContent 
             ? `${message}\n\nUploaded Markdown Content:\n\`\`\`markdown\n${currentMarkdownContent}\n\`\`\``
             : message;
@@ -168,6 +120,80 @@ function sendMessage() {
         fileNameSpan.textContent = '';
         
         setLoading(true);
+    } catch (error) {
+        console.error('Error in sendMessage:', error);
+    }
+}
+
+function appendMessage(message, isUser = false) {
+    if (!message) {
+        console.warn('Attempted to append undefined or empty message');
+        return;
+    }
+
+    try {
+        const messageContainer = document.createElement('div');
+        messageContainer.className = 'message-container';
+
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
+        messageDiv.innerHTML = formatMessage(message);
+
+        const copyButton = document.createElement('button');
+        copyButton.className = 'copy-button';
+        copyButton.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+            <span>Copy</span>
+        `;
+        
+        copyButton.addEventListener('click', () => {
+            if (!message) {
+                return;
+            }
+            // Get text content without the copy button
+            navigator.clipboard.writeText(message).then(() => {
+                copyButton.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    <span>Copied!</span>
+                `;
+                copyButton.style.color = '#28a745';
+                
+                setTimeout(() => {
+                    copyButton.innerHTML = `
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
+                        <span>Copy</span>
+                    `;
+                    copyButton.style.color = '';
+                }, 2000);
+            });
+        });
+
+        messageContainer.appendChild(messageDiv);
+        messageContainer.appendChild(copyButton);
+
+        // Insert before the loading spinner if it's visible
+        if (loadingSpinner.style.display === 'block') {
+            messagesDiv.insertBefore(messageContainer, loadingSpinner);
+        } else {
+            messagesDiv.appendChild(messageContainer);
+        }
+
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+        // Highlight all code blocks
+        messageDiv.querySelectorAll('pre code').forEach((block) => {
+            Prism.highlightElement(block);
+        });
+    } catch (error) {
+        console.error('Error in appendMessage:', error);
     }
 }
 
@@ -178,15 +204,32 @@ function clearChat() {
     messagesDiv.appendChild(loadingSpinner);
 }
 
-messageInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter' && !messageInput.disabled) {
-        sendMessage();
+messageInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+        // If shift is held down, allow new line
+        if (e.shiftKey) {
+            return; // Default behavior (new line) will occur
+        }
+        
+        // Otherwise prevent default behavior and send message
+        e.preventDefault();
+        if (!messageInput.disabled) {
+            sendMessage();
+        }
     }
 });
+
 
 socket.on('chat response', (response) => {
     setLoading(false);
     appendMessage(response);
+});
+
+socket.on('conversation_started', (data) => {
+    const modelDisplay = document.getElementById('model-display');
+    if (modelDisplay) {
+        modelDisplay.textContent = `Model: ${data.model}`;
+    }
 });
 
 socket.on('error', (error) => {

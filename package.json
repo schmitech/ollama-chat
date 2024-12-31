@@ -8,6 +8,7 @@
     "build": "tsc",
     "dev": "nodemon src/index.ts",
     "start:falcon": "cross-env OLLAMA_MODEL=falcon ts-node src/index.ts",
+    "start:orca-mini": "cross-env OLLAMA_MODEL=orca-mini ts-node src/index.ts",
     "start:mistral": "cross-env OLLAMA_MODEL=mistral ts-node src/index.ts",
     "start:mathstral": "cross-env OLLAMA_MODEL=mathstral ts-node src/index.ts",
     "start:tinyllama": "cross-env OLLAMA_MODEL=tinyllama ts-node src/index.ts",
