@@ -5,20 +5,13 @@ const socket = io({
     reconnection: true,
     reconnectionAttempts: 3,
     reconnectionDelay: 1000
-  });
+});
 
 const messagesDiv = document.getElementById('messages');
 const messageInput = document.getElementById('message-input');
 const sendButton = document.getElementById('send-button');
 const clearButton = document.getElementById('clear-button');
 const loadingSpinner = document.getElementById('loading-spinner');
-
-const fileInput = document.getElementById('file-input');
-const uploadButton = document.getElementById('upload-button');
-const fileNameSpan = document.getElementById('file-name');
-const uploadedTextDiv = document.getElementById('uploaded-text');
-
-let currentMarkdownContent = null;
 
 function setLoading(isLoading) {
     messageInput.disabled = isLoading;
@@ -32,30 +25,6 @@ function setLoading(isLoading) {
         // Scroll to bottom
         messagesDiv.scrollTop = messagesDiv.scrollHeight;
     }
-}
-
-fileInput.addEventListener('change', (event) => {
-    const file = event.target.files[0];
-    if (file) {
-        fileNameSpan.textContent = file.name;
-        const reader = new FileReader();
-        
-        reader.onload = (event) => {
-            currentMarkdownContent = event.target.result;
-        };
-        
-        reader.readAsText(file);
-    } else {
-        fileNameSpan.textContent = '';
-        currentMarkdownContent = null;
-    }
-});
-
-function closePreview() {
-    uploadedTextDiv.style.display = 'none';
-    fileInput.value = '';
-    fileNameSpan.textContent = '';
-    currentMarkdownContent = null;
 }
 
 function formatMessage(content) {
@@ -106,19 +75,9 @@ function sendMessage() {
     }
 
     try {
-        const fullMessage = currentMarkdownContent 
-            ? `${message}\n\nUploaded Markdown Content:\n\`\`\`markdown\n${currentMarkdownContent}\n\`\`\``
-            : message;
-            
-        appendMessage(fullMessage, true);
-        socket.emit('chat message', fullMessage);
+        appendMessage(message, true);
+        socket.emit('chat message', message);
         messageInput.value = '';
-        
-        // Clear the markdown content after sending
-        currentMarkdownContent = null;
-        fileInput.value = '';
-        fileNameSpan.textContent = '';
-        
         setLoading(true);
     } catch (error) {
         console.error('Error in sendMessage:', error);
@@ -218,7 +177,6 @@ messageInput.addEventListener('keydown', (e) => {
         }
     }
 });
-
 
 socket.on('chat response', (response) => {
     setLoading(false);

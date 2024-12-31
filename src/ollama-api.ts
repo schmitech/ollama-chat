@@ -63,7 +63,7 @@ constructor() {
       if (!conversation) throw new Error('Conversation not found');
 
       // Take only last N messages for context
-      const contextSize = 10; // Adjust based on your needs
+      const contextSize = 30; // Adjust based on your needs
       const recentMessages = conversation.messages
         .slice(-contextSize)
         .map(msg => msg.content)

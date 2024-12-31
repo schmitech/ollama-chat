@@ -90,36 +90,6 @@ button:disabled {
     background-color: #c82333;
 }
 
-/* File upload related styles */
-.upload-container {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.file-input {
-    width: 0.1px;
-    height: 0.1px;
-    opacity: 0;
-    overflow: hidden;
-    position: absolute;
-    z-index: -1;
-}
-
-.file-label svg {
-    width: 16px;
-    height: 16px;
-}
-
-.file-name {
-    font-size: 14px;
-    color: #6c757d;
-    max-width: 150px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
 /* Message styles */
 .message {
     margin-bottom: 20px;
