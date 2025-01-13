@@ -1,142 +1,191 @@
-import sqlite3 from 'sqlite3';
-import { Database, open } from 'sqlite';
-import crypto from 'crypto';
-
 export interface Message {
-  role: 'user' | 'assistant';
   content: string;
-  timestamp: number;
+  isUser: boolean;
 }
 
 export interface Conversation {
   id: string;
   messages: Message[];
-  model: string;
-  lastUpdated: number;
 }
 
 export class ConversationStore {
-  private db: Database | null = null;
+  private db: IDBDatabase | null = null;
+  private readonly DB_NAME = 'ollamaChat';
+  private readonly DB_VERSION = 1;
+  private initPromise: Promise<void>;
+  private readonly MAX_MESSAGES = 100; // Maximum messages per conversation
 
   constructor() {
-    this.initializeDb();
+    this.initPromise = this.initDatabase();
   }
 
-  private async initializeDb() {
-    this.db = await open({
-      filename: 'conversations.db',
-      driver: sqlite3.Database
+  private async initDatabase(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open(this.DB_NAME, this.DB_VERSION);
+
+      request.onerror = () => {
+        reject(request.error);
+      };
+
+      request.onsuccess = () => {
+        this.db = request.result;
+        resolve();
+      };
+
+      request.onupgradeneeded = (event) => {
+        const db = (event.target as IDBOpenDBRequest).result;
+        
+        if (!db.objectStoreNames.contains('conversations')) {
+          const conversationStore = db.createObjectStore('conversations', { keyPath: 'id' });
+          conversationStore.createIndex('created_at', 'created_at');
+        }
+
+        if (!db.objectStoreNames.contains('messages')) {
+          const messageStore = db.createObjectStore('messages', { keyPath: 'id', autoIncrement: true });
+          messageStore.createIndex('conversation_id', 'conversation_id');
+          messageStore.createIndex('created_at', 'created_at');
+        }
+      };
     });
+  }
 
-    // Create tables if they don't exist
-    await this.db.exec(`
-      CREATE TABLE IF NOT EXISTS conversations (
-        id TEXT PRIMARY KEY,
-        model TEXT NOT NULL,
-        lastUpdated INTEGER NOT NULL
-      );
+  async ensureInitialized(): Promise<void> {
+    await this.initPromise;
+  }
+
+  async createConversation(): Promise<string> {
+    await this.ensureInitialized();
+    if (!this.db) throw new Error('Database not initialized');
+    
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction(['conversations'], 'readwrite');
+      const store = transaction.objectStore('conversations');
       
-      CREATE TABLE IF NOT EXISTS messages (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        conversationId TEXT NOT NULL,
-        role TEXT NOT NULL,
-        content TEXT NOT NULL,
-        timestamp INTEGER NOT NULL,
-        FOREIGN KEY (conversationId) REFERENCES conversations(id)
-      );
-    `);
+      const id = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const request = store.add({
+        id,
+        created_at: new Date()
+      });
+
+      request.onsuccess = () => resolve(id);
+      request.onerror = () => reject(request.error);
+    });
   }
 
-  async createConversation(model: string): Promise<string> {
+  async addMessage(conversationId: string, message: Message): Promise<void> {
     if (!this.db) throw new Error('Database not initialized');
     
-    const id = crypto.randomBytes(16).toString('hex');
-    await this.db.run(
-      'INSERT INTO conversations (id, model, lastUpdated) VALUES (?, ?, ?)',
-      [id, model, Date.now()]
-    );
-    
-    return id;
+    return new Promise(async (resolve, reject) => {
+      try {
+        // Get current message count
+        const messages = await this.getConversation(conversationId);
+        
+        // If we're at the limit, remove the oldest message first
+        if (messages.length >= this.MAX_MESSAGES) {
+          const transaction = this.db!.transaction(['messages'], 'readwrite');
+          const store = transaction.objectStore('messages');
+          const index = store.index('conversation_id');
+          const request = index.openCursor(conversationId);
+          
+          request.onsuccess = (event) => {
+            const cursor = (event.target as IDBRequest).result;
+            if (cursor) {
+              cursor.delete(); // Delete oldest message
+            }
+          };
+        }
+
+        // Add new message
+        const transaction = this.db!.transaction(['messages'], 'readwrite');
+        const store = transaction.objectStore('messages');
+        
+        const request = store.add({
+          conversation_id: conversationId,
+          content: message.content,
+          is_user: message.isUser,
+          created_at: new Date()
+        });
+
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(request.error);
+      } catch (error) {
+        reject(error);
+      }
+    });
   }
 
-  async getConversation(id: string): Promise<Conversation | null> {
+  async getConversation(id: string): Promise<Message[]> {
     if (!this.db) throw new Error('Database not initialized');
-
-    const conversation = await this.db.get(
-      'SELECT * FROM conversations WHERE id = ?',
-      [id]
-    );
-    if (!conversation) return null;
-
-    const messages = await this.db.all(
-      'SELECT role, content, timestamp FROM messages WHERE conversationId = ? ORDER BY timestamp',
-      [id]
-    );
-
-    return {
-      id: conversation.id,
-      model: conversation.model,
-      lastUpdated: conversation.lastUpdated,
-      messages
-    };
-  }
-
-  async addMessage(id: string, message: Omit<Message, 'timestamp'>): Promise<void> {
-    if (!this.db) throw new Error('Database not initialized');
-
-    const timestamp = Date.now();
-    await this.db.run(
-      'INSERT INTO messages (conversationId, role, content, timestamp) VALUES (?, ?, ?, ?)',
-      [id, message.role, message.content, timestamp]
-    );
     
-    await this.db.run(
-      'UPDATE conversations SET lastUpdated = ? WHERE id = ?',
-      [timestamp, id]
-    );
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction(['messages'], 'readonly');
+      const store = transaction.objectStore('messages');
+      const index = store.index('conversation_id');
+      
+      const request = index.getAll(id);
+
+      request.onsuccess = () => {
+        const messages = request.result.map(msg => ({
+          content: msg.content,
+          isUser: msg.is_user
+        }));
+        resolve(messages);
+      };
+      request.onerror = () => reject(request.error);
+    });
   }
 
   async clearConversation(id: string): Promise<void> {
     if (!this.db) throw new Error('Database not initialized');
+    
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction(['messages'], 'readwrite');
+      const store = transaction.objectStore('messages');
+      const index = store.index('conversation_id');
+      
+      const request = index.getAll(id);
 
-    await this.db.run('DELETE FROM messages WHERE conversationId = ?', [id]);
-    await this.db.run(
-      'UPDATE conversations SET lastUpdated = ? WHERE id = ?',
-      [Date.now(), id]
-    );
+      request.onsuccess = () => {
+        const deleteTransaction = this.db!.transaction(['messages'], 'readwrite');
+        const deleteStore = deleteTransaction.objectStore('messages');
+        
+        request.result.forEach(msg => {
+          deleteStore.delete(msg.id);
+        });
+        
+        resolve();
+      };
+      request.onerror = () => reject(request.error);
+    });
   }
 
-  async deleteConversation(id: string): Promise<void> {
+  async listConversations(): Promise<Array<{ id: string; messages: Message[] }>> {
     if (!this.db) throw new Error('Database not initialized');
+    
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction(['conversations'], 'readonly');
+      const store = transaction.objectStore('conversations');
+      
+      const request = store.getAll();
 
-    await this.db.run('DELETE FROM messages WHERE conversationId = ?', [id]);
-    await this.db.run('DELETE FROM conversations WHERE id = ?', [id]);
-  }
-
-  async listConversations(): Promise<Array<{ id: string; lastUpdated: number }>> {
-    if (!this.db) throw new Error('Database not initialized');
-
-    return this.db.all(
-      'SELECT id, lastUpdated FROM conversations ORDER BY lastUpdated DESC'
-    );
+      request.onsuccess = async () => {
+        const conversations = request.result;
+        const result = await Promise.all(
+          conversations.map(async conv => ({
+            id: conv.id,
+            messages: await this.getConversation(conv.id)
+          }))
+        );
+        resolve(result);
+      };
+      request.onerror = () => reject(request.error);
+    });
   }
 
   async cleanup(): Promise<void> {
-    if (!this.db) return;
-    
-    // Close the database connection
-    await this.db.close();
-    
-    // Reset the db reference
-    this.db = null;
-  }
-
-  async clearAllData(): Promise<void> {
-    if (!this.db) throw new Error('Database not initialized');
-    
-    await this.db.exec(`
-      DELETE FROM messages;
-      DELETE FROM conversations;
-    `);
+    if (this.db) {
+      this.db.close();
+      this.db = null;
+    }
   }
 }

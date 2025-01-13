@@ -4,9 +4,9 @@ A simple web-based chat client for interacting with Ollama models. This applicat
 
 ## Prerequisites
 
-- Node.js (v14 or higher)
+- Node.js (v18 or higher)
 - npm (Node Package Manager)
-- Ollama installed and running on your machine or a remote server
+- Ollama installed and running on your machine
 
 ## Installation
 
@@ -16,24 +16,20 @@ git clone https://github.com/schmitech/ollama-chat
 cd ollama-chat
 ```
 
-2. Install dependencies:
-```bash
-npm install
-```
-
-3. Create a `.env` file in the root directory (or copy the example):
+2. Copy the environment configuration:
 ```bash
 cp .env.example .env
 ```
 
-## Configuration
-
-You can configure the application using the following environment variables in the `.env` file:
-
+3. Update the `.env` file with your preferred settings:
 ```env
-OLLAMA_MODEL=mistral
-OLLAMA_ENDPOINT=http://localhost:11434
-PORT=3000
+VITE_OLLAMA_MODEL=mistral    # Recommended for chat (options: mistral, llama2, falcon, etc.)
+VITE_OLLAMA_API_HOST=http://localhost:11434    # Your Ollama API host
+```
+
+4. Install dependencies:
+```bash
+npm install
 ```
 
 ## Usage
@@ -43,43 +39,70 @@ There are several ways to run the application:
 ### Using predefined model scripts
 
 ```bash
-# Start with Mistral model
-npm run start:mistral
+# Start with Mistral model (recommended for chat)
+npm run dev:mistral
 
-# Start with Llama2 model
-npm run start:llama2
+# Start with Falcon model
+npm run dev:falcon
 
-# Start with CodeLlama model
-npm run start:codellama
+# Start with Orca-mini model
+npm run dev:orca-mini
+
+# Start with TinyLlama model
+npm run dev:tinyllama
 ```
 
-### Using custom configuration
+### Development
+
+To run the application in development mode with the default model:
 
 ```bash
-# Use settings from .env file
-npm run start:custom
+npm run dev
 ```
 
-### Using custom environment variables
+### Building for Production
+
+To create a production build:
 
 ```bash
-# Specify model and endpoint directly
-OLLAMA_MODEL=your-model OLLAMA_ENDPOINT=http://your-server:11434 npm start
+npm run build
+```
+
+To preview the production build:
+
+```bash
+npm run preview
 ```
 
 ## Accessing the Chat Interface
 
 1. Start the application using one of the methods above
-2. Open your web browser and navigate to `http://localhost:3000`
+2. Open your web browser and navigate to `http://localhost:5173` (development) or the URL shown in your terminal
 3. Start chatting with your chosen Ollama model!
 
-## Development
+## Troubleshooting
 
-To run the application in development mode with auto-reload:
+### Common Issues
 
-```bash
-npm run dev
-```
+1. **Ollama API Connection Error**
+   - Ensure Ollama is running (`ollama serve`)
+   - Verify that Ollama is accessible at http://localhost:11434
+   - Verify that the specified model is installed (`ollama list`)
+
+2. **Model Not Found**
+   - Install the required model using: `ollama pull model-name`
+   - Check if the model name matches exactly with `ollama list`
+
+3. **Conversation Context Issues**
+   - Some models (like Mistral) handle chat context better than others
+   - If context is important, use Mistral or Llama2
+
+### Getting Help
+
+If you encounter any issues:
+1. Check the browser's console logs
+2. Ensure Ollama is running and responsive
+3. Open an issue in the repository with detailed error information
 
 ## Contributing
 
@@ -92,30 +115,5 @@ npm run dev
 ## License
 
 This project is licensed under the Apache 2 License - see the LICENSE file for details.
-
-## Troubleshooting
-
-### Common Issues
-
-1. **Ollama API Connection Error**
-   - Ensure Ollama is running and accessible
-   - Check if the OLLAMA_ENDPOINT in .env matches your Ollama server address
-   - Verify that the specified model is installed (`ollama list`)
-
-2. **Model Not Found**
-   - Install the required model using: `ollama pull model-name`
-   - Check if the model name matches exactly with `ollama list`
-
-3. **Port Already in Use**
-   - Change the PORT in .env file
-   - Check if another process is using port 3000
-
-### Getting Help
-
-If you encounter any issues:
-1. Check the console logs in your terminal
-2. Verify your configuration in .env
-3. Ensure Ollama is running and responsive
-4. Open an issue in the repository with detailed error information
 
 Copyright 2024 Schmitech Inc.
