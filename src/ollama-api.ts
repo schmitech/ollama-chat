@@ -3,9 +3,11 @@ import { ConversationStore } from './conversation-store';
 export class OllamaAPI {
   private currentConversationId: string | null = null;
   public conversationStore: ConversationStore;
+  private model: string;
 
   constructor() {
     this.conversationStore = new ConversationStore();
+    this.model = import.meta.env.VITE_OLLAMA_MODEL || 'llama2';
   }
 
   async initConversation(): Promise<string> {
@@ -33,7 +35,7 @@ export class OllamaAPI {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: import.meta.env.VITE_OLLAMA_MODEL || 'mistral',
+          model: this.model,
           messages: [
             ...context,
             { role: 'user', content: message }
@@ -82,5 +84,13 @@ export class OllamaAPI {
       await this.conversationStore.clearConversation(this.currentConversationId);
       this.currentConversationId = await this.conversationStore.createConversation();
     }
+  }
+
+  getCurrentModel(): string {
+    return this.model;
+  }
+
+  setModel(model: string) {
+    this.model = model;
   }
 }

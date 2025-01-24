@@ -1,6 +1,19 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Send, Trash2, Copy, Check, Loader2 } from 'lucide-react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { Send, Trash2, Copy, Check, Loader2, ChevronDown } from 'lucide-react';
 import { OllamaAPI } from './ollama-api';
+
+type ModelOption = {
+  value: string;
+  label: string;
+};
+
+const MODEL_OPTIONS: ModelOption[] = [
+  { value: 'falcon', label: 'Falcon' },
+  { value: 'mistral', label: 'Mistral' },
+  { value: 'orca-mini', label: 'Orca Mini' },
+  { value: 'mathstral', label: 'Mathstral' },
+  { value: 'tinyllama', label: 'TinyLlama' },
+];
 
 function App() {
   const [messages, setMessages] = useState<Array<{ content: string; isUser: boolean }>>([]);
@@ -11,6 +24,8 @@ function App() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [api] = useState(() => new OllamaAPI());
+  const [selectedModel, setSelectedModel] = useState<string>(api.getCurrentModel());
+  const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
 
   useEffect(() => {
     // Initialize conversation when component mounts
@@ -105,12 +120,67 @@ function App() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  const handleModelChange = async (model: string) => {
+    try {
+      setIsLoading(true);
+      setIsModelDropdownOpen(false);
+      
+      // Clear the current conversation
+      await api.clearCurrentConversation();
+      setMessages([]);
+      
+      // Update the model
+      api.setModel(model);
+      setSelectedModel(model);
+      
+      // Initialize a new conversation with the selected model
+      await api.initConversation();
+    } catch (err) {
+      setError('Failed to switch model');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 p-4 flex items-center justify-center">
       <div className="w-full max-w-4xl bg-white rounded-xl shadow-lg flex flex-col h-[800px]">
         {/* Header */}
         <div className="p-4 border-b flex justify-between items-center">
-          <h1 className="text-xl font-semibold text-gray-800">Ollama Chat</h1>
+          <div className="flex items-center space-x-4">
+            <h1 className="text-xl font-semibold text-gray-800">Ollama Chat</h1>
+            <div className="relative">
+              <button
+                onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
+                disabled={isLoading}
+                className={`px-3 py-1.5 rounded-lg border flex items-center space-x-2 ${
+                  isLoading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50'
+                }`}
+              >
+                <span className="text-sm">
+                  {MODEL_OPTIONS.find(m => m.value === selectedModel)?.label || 'Select Model'}
+                </span>
+                <ChevronDown className="w-4 h-4" />
+              </button>
+              
+              {isModelDropdownOpen && (
+                <div className="absolute top-full mt-1 w-48 bg-white border rounded-lg shadow-lg py-1 z-10">
+                  {MODEL_OPTIONS.map((option) => (
+                    <button
+                      key={option.value}
+                      onClick={() => handleModelChange(option.value)}
+                      className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 ${
+                        selectedModel === option.value ? 'bg-gray-50' : ''
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+          
           <button
             onClick={clearChat}
             disabled={isLoading || messages.length === 0}
