@@ -7,20 +7,13 @@ type ModelOption = {
   label: string;
 };
 
-const MODEL_OPTIONS: ModelOption[] = [
-  { value: 'falcon', label: 'Falcon' },
-  { value: 'mistral', label: 'Mistral' },
-  { value: 'orca-mini', label: 'Orca Mini' },
-  { value: 'mathstral', label: 'Mathstral' },
-  { value: 'tinyllama', label: 'TinyLlama' },
-];
-
 function App() {
   const [messages, setMessages] = useState<Array<{ content: string; isUser: boolean }>>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [modelOptions, setModelOptions] = useState<ModelOption[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [api] = useState(() => new OllamaAPI());
@@ -60,6 +53,16 @@ function App() {
       textareaRef.current.focus();
     }
   }, [isLoading]);
+
+  // Add this effect to fetch available models when component mounts
+  useEffect(() => {
+    const fetchModels = async () => {
+      const models = await api.getAvailableModels();
+      setModelOptions(models);
+      setSelectedModel(api.getCurrentModel());
+    };
+    fetchModels();
+  }, [api]);
 
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
@@ -124,18 +127,17 @@ function App() {
     try {
       setIsLoading(true);
       setIsModelDropdownOpen(false);
+      setError(null);
       
-      // Clear the current conversation
       await api.clearCurrentConversation();
       setMessages([]);
       
-      // Update the model
       api.setModel(model);
       setSelectedModel(model);
       
-      // Initialize a new conversation with the selected model
       await api.initConversation();
     } catch (err) {
+      console.error('Error switching model:', err);
       setError('Failed to switch model');
     } finally {
       setIsLoading(false);
@@ -158,14 +160,14 @@ function App() {
                 }`}
               >
                 <span className="text-sm">
-                  {MODEL_OPTIONS.find(m => m.value === selectedModel)?.label || 'Select Model'}
+                  {modelOptions.find(m => m.value === selectedModel)?.label || 'Select Model'}
                 </span>
                 <ChevronDown className="w-4 h-4" />
               </button>
               
               {isModelDropdownOpen && (
                 <div className="absolute top-full mt-1 w-48 bg-white border rounded-lg shadow-lg py-1 z-10">
-                  {MODEL_OPTIONS.map((option) => (
+                  {modelOptions.map((option) => (
                     <button
                       key={option.value}
                       onClick={() => handleModelChange(option.value)}

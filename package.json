@@ -5,11 +5,6 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:falcon": "cross-env VITE_OLLAMA_MODEL=falcon vite",
-    "dev:mistral": "cross-env VITE_OLLAMA_MODEL=mistral vite",
-    "dev:orca-mini": "cross-env VITE_OLLAMA_MODEL=orca-mini vite",
-    "dev:mathstral": "cross-env VITE_OLLAMA_MODEL=mathstral vite",
-    "dev:tinyllama": "cross-env VITE_OLLAMA_MODEL=tinyllama vite",
     "build": "vite build",
     "preview": "vite preview"
   },

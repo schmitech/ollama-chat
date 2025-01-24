@@ -7,7 +7,16 @@ export class OllamaAPI {
 
   constructor() {
     this.conversationStore = new ConversationStore();
-    this.model = import.meta.env.VITE_OLLAMA_MODEL || 'llama2';
+    this.model = 'llama2'; // temporary default
+    
+    // Fetch available models and set the first one as default
+    this.getAvailableModels().then(models => {
+      if (models.length > 0) {
+        this.model = models[0].value;
+        // Make sure to initialize conversation with the new model
+        this.initConversation();
+      }
+    });
   }
 
   async initConversation(): Promise<string> {
@@ -82,6 +91,7 @@ export class OllamaAPI {
   async clearCurrentConversation(): Promise<void> {
     if (this.currentConversationId) {
       await this.conversationStore.clearConversation(this.currentConversationId);
+      // Create a new conversation immediately after clearing
       this.currentConversationId = await this.conversationStore.createConversation();
     }
   }
@@ -92,5 +102,22 @@ export class OllamaAPI {
 
   setModel(model: string) {
     this.model = model;
+  }
+
+  async getAvailableModels(): Promise<Array<{value: string, label: string}>> {
+    try {
+      const response = await fetch('http://localhost:11434/api/tags');
+      if (!response.ok) {
+        throw new Error('Failed to fetch models');
+      }
+      const data = await response.json();
+      return data.models.map((model: { name: string }) => ({
+        value: model.name,
+        label: model.name
+      }));
+    } catch (error) {
+      console.error('Error fetching models:', error);
+      return [];
+    }
   }
 }
