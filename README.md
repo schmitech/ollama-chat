@@ -36,26 +36,6 @@ npm install
 
 ## Usage
 
-There are several ways to run the application:
-
-### Using predefined model scripts
-
-```bash
-# Start with Mistral model (recommended for chat)
-npm run dev:mistral
-
-# Start with Falcon model
-npm run dev:falcon
-
-# Start with Orca-mini model
-npm run dev:orca-mini
-
-# Start with TinyLlama model
-npm run dev:tinyllama
-```
-
-### Development
-
 To run the application in development mode with the default model:
 
 ```bash
