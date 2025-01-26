@@ -2,6 +2,8 @@
 
 A simple web-based chat client for interacting with Ollama models. This application provides a clean interface for chatting with any Ollama model running locally or on a remote server.
 
+![Ollama Chat Demo](./assets/ollama-chat.gif)
+
 ## Prerequisites
 
 - Node.js (v18 or higher)
