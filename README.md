@@ -18,18 +18,7 @@ git clone https://github.com/schmitech/ollama-chat
 cd ollama-chat
 ```
 
-2. Copy the environment configuration:
-```bash
-cp .env.example .env
-```
-
-3. Update the `.env` file with your preferred settings:
-```env
-VITE_OLLAMA_MODEL=mistral    # Recommended for chat (options: mistral, llama2, falcon, etc.)
-VITE_OLLAMA_API_HOST=http://localhost:11434    # Your Ollama API host
-```
-
-4. Install dependencies:
+2. Install dependencies:
 ```bash
 npm install
 ```
