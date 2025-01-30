@@ -19,6 +19,7 @@ function App() {
   const [api] = useState(() => new OllamaAPI());
   const [selectedModel, setSelectedModel] = useState<string>(api.getCurrentModel());
   const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
+  const [temperature, setTemperature] = useState(0.7);
 
   useEffect(() => {
     // Initialize conversation when component mounts
@@ -69,15 +70,17 @@ function App() {
     
     try {
       setIsLoading(true);
-      const newMessage = { content: input, isUser: true };
-      setMessages(prev => [...prev, newMessage]);
+      setMessages(prev => [...prev, { content: input, isUser: true }]);
       setInput('');
       
-      const response = await api.generate(input);
+      console.log(`Generating response with temperature: ${temperature}`);
+      const response = await api.generate(input, temperature);
+      
       if (response) {
         setMessages(prev => [...prev, { content: response, isUser: false }]);
       }
     } catch (err) {
+      console.error('Error generating response:', err);
       setError('Failed to generate response');
     } finally {
       setIsLoading(false);
@@ -180,6 +183,23 @@ function App() {
                   ))}
                 </div>
               )}
+            </div>
+            <div className="flex items-center space-x-2 bg-gray-50 p-2 rounded-lg">
+              <label htmlFor="temperature-slider" className="text-sm font-medium">
+                Temperature: {temperature.toFixed(1)}
+              </label>
+              <input
+                id="temperature-slider"
+                type="range"
+                min="0"
+                max="1"
+                step="0.1"
+                value={temperature}
+                onChange={(e) => setTemperature(parseFloat(e.target.value))}
+                className="w-32 accent-blue-600"
+                disabled={isLoading}
+                title={`Higher values (closer to 1) make the output more random, lower values make it more focused and deterministic`}
+              />
             </div>
           </div>
           

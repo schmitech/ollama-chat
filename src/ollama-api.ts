@@ -26,7 +26,7 @@ export class OllamaAPI {
     return id;
   }
 
-  async generate(message: string): Promise<string> {
+  async generate(message: string, temperature: number): Promise<string> {
     try {
       if (!this.currentConversationId) {
         throw new Error('No active conversation');
@@ -38,29 +38,38 @@ export class OllamaAPI {
         content: msg.content
       }));
 
+      const requestBody = {
+        model: this.model,
+        messages: [
+          ...context,
+          { role: 'user', content: message }
+        ],
+        stream: false,
+        options: {
+          temperature: temperature
+        }
+      };
+
+      // Log the request for debugging
+      console.log('Sending request to Ollama API:', JSON.stringify(requestBody, null, 2));
+
       const response = await fetch('http://localhost:11434/api/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          model: this.model,
-          messages: [
-            ...context,
-            { role: 'user', content: message }
-          ],
-          stream: false,
-          options: {
-            temperature: 0.7
-          }
-        }),
+        body: JSON.stringify(requestBody),
       });
 
+      // Log the raw response for debugging
+      const responseText = await response.text();
+      console.log('Raw response from Ollama API:', responseText);
+
       if (!response.ok) {
-        throw new Error(`Failed to generate response: ${await response.text()}`);
+        throw new Error(`Failed to generate response: ${responseText}`);
       }
 
-      const data = await response.json();
+      const data = JSON.parse(responseText);
       if (!data.message) {
         throw new Error('Invalid response from Ollama');
       }
