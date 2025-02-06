@@ -1,6 +1,10 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Send, Trash2, Copy, Check, Loader2, ChevronDown } from 'lucide-react';
 import { OllamaAPI } from './ollama-api';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeHighlight from 'rehype-highlight';
+import 'highlight.js/styles/github-dark.css';
 
 type ModelOption = {
   value: string;
@@ -231,7 +235,24 @@ function App() {
                     : 'bg-gray-100 text-gray-800'
                 }`}
               >
-                <p className="whitespace-pre-wrap">{message.content}</p>
+                {message.isUser ? (
+                  <p className="whitespace-pre-wrap">{message.content}</p>
+                ) : (
+                  <ReactMarkdown 
+                    className="prose max-w-none 
+                      prose-headings:mb-4 
+                      prose-p:my-4
+                      prose-li:my-2
+                      prose-ul:my-4"
+                    remarkPlugins={[remarkGfm]}
+                    rehypePlugins={[rehypeHighlight]}
+                    components={{
+                      p: ({node, ...props}) => <p className="mb-4" {...props} />
+                    }}
+                  >
+                    {message.content}
+                  </ReactMarkdown>
+                )}
                 <button
                   onClick={() => copyToClipboard(message.content, index)}
                   className={`absolute -right-10 top-2 p-1.5 rounded-lg 
