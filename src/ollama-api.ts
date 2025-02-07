@@ -4,10 +4,12 @@ export class OllamaAPI {
   private currentConversationId: string | null = null;
   public conversationStore: ConversationStore;
   private model: string;
+  private baseUrl: string;
 
   constructor() {
     this.conversationStore = new ConversationStore();
     this.model = 'llama2'; // temporary default
+    this.baseUrl = import.meta.env.VITE_OLLAMA_API_URL || 'http://localhost:11434';
     
     // Fetch available models and set the first one as default
     this.getAvailableModels().then(models => {
@@ -53,7 +55,7 @@ export class OllamaAPI {
       // Log the request for debugging
       console.log('Sending request to Ollama API:', JSON.stringify(requestBody, null, 2));
 
-      const response = await fetch('http://localhost:11434/api/chat', {
+      const response = await fetch(`${this.baseUrl}/api/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -115,7 +117,7 @@ export class OllamaAPI {
 
   async getAvailableModels(): Promise<Array<{value: string, label: string}>> {
     try {
-      const response = await fetch('http://localhost:11434/api/tags');
+      const response = await fetch(`${this.baseUrl}/api/tags`);
       if (!response.ok) {
         throw new Error('Failed to fetch models');
       }
