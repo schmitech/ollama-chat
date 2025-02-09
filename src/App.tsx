@@ -247,7 +247,18 @@ function App() {
                     remarkPlugins={[remarkGfm]}
                     rehypePlugins={[rehypeHighlight]}
                     components={{
-                      p: ({node, ...props}) => <p className="mb-4" {...props} />
+                      p: ({node, ...props}) => <p className="mb-4" {...props} />,
+                      a: ({node, children, href, ...props}) => (
+                        <a 
+                          href={href}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:text-blue-800 underline"
+                          {...props}
+                        >
+                          {children}
+                        </a>
+                      )
                     }}
                   >
                     {message.content}
